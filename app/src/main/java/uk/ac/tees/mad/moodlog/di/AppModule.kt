@@ -7,6 +7,7 @@ import org.koin.dsl.module
 import uk.ac.tees.mad.moodlog.model.network.NetworkConnectivityManager
 import uk.ac.tees.mad.moodlog.model.repository.AuthRepository
 import uk.ac.tees.mad.moodlog.model.repository.NetworkRepository
+import uk.ac.tees.mad.moodlog.viewmodel.AuthScreenViewModel
 import uk.ac.tees.mad.moodlog.viewmodel.SplashScreenViewModel
 
 val appModule = module {
@@ -15,9 +16,10 @@ val appModule = module {
     single { NetworkRepository(get()) }
 
     // Firebase
-    single { FirebaseAuth.getInstance() }
-    single { AuthRepository(get()) }
+    //single { FirebaseAuth.getInstance() }
+    //single { AuthRepository(get()) }
 
     // ViewModels
     viewModelOf(::SplashScreenViewModel)
+    viewModelOf(::AuthScreenViewModel)
 }
