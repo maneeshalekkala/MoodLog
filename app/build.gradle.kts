@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10"
     id("com.google.devtools.ksp")
-    //id("com.google.gms.google-services")
+    id("com.google.gms.google-services")
 }
 
 android {

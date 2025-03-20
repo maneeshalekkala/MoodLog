@@ -14,7 +14,7 @@ import uk.ac.tees.mad.moodlog.model.repository.NetworkRepository
 
 class SplashScreenViewModel(
     private val networkRepository: NetworkRepository,
-    //private val authRepository: AuthRepository
+    private val authRepository: AuthRepository
 ) : ViewModel() {
     private val _isNetworkAvailable: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val isNetworkAvailable: StateFlow<Boolean> = _isNetworkAvailable.asStateFlow()
@@ -52,7 +52,7 @@ class SplashScreenViewModel(
                     _loadingState.value = LoadingState.Loading
                     delay(5000)
                     val message = "No internet connection"
-                    //if (authRepository.isSignedIn()) {
+                    if (authRepository.isSignedIn()) {
 //                        if (homeScreenStockDataRepository.getHomeScreenStockDataCountForUser(
 //                                getCurrentUserId().toString()
 //                            ) == 0
@@ -60,12 +60,12 @@ class SplashScreenViewModel(
 //                            _loadingState.value = LoadingState.Error(message)
 //                        } else {
 
-                        //_loadingState.value = LoadingState.Success(Any())
+                        _loadingState.value = LoadingState.Success(Any())
 
 //                        }
-                    //} else {
+                    } else {
                        _loadingState.value = LoadingState.Error(message)
-                    //}
+                    }
                 }
             }
         }
@@ -75,7 +75,7 @@ class SplashScreenViewModel(
 //        return authRepository.getCurrentUserId()
 //    }
 //
-//    fun isSignedIn(): Boolean {
-//        return authRepository.isSignedIn()
-//    }
+    fun isSignedIn(): Boolean {
+        return authRepository.isSignedIn()
+    }
 }

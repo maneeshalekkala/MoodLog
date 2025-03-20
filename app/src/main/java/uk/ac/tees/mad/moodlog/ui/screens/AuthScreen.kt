@@ -21,12 +21,17 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.HowToReg
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,6 +63,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import org.koin.androidx.compose.koinViewModel
 import uk.ac.tees.mad.moodlog.R
+import uk.ac.tees.mad.moodlog.model.dataclass.firebase.AuthResult
+import uk.ac.tees.mad.moodlog.view.navigation.Dest
+import uk.ac.tees.mad.moodlog.view.navigation.SubGraph
 import uk.ac.tees.mad.moodlog.viewmodel.AuthScreenViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,6 +77,10 @@ fun AuthScreen(
     val password by viewmodel.password.collectAsStateWithLifecycle()
     val confirmPassword by viewmodel.confirmPassword.collectAsStateWithLifecycle()
     val isPasswordVisible by viewmodel.isPasswordVisible.collectAsStateWithLifecycle()
+    val isSignInMode by viewmodel.isSignInMode.collectAsStateWithLifecycle()
+    val isRegisterMode by viewmodel.registerMode.collectAsStateWithLifecycle()
+    val signInResult by viewmodel.signInResult.collectAsStateWithLifecycle()
+    val registerResult by viewmodel.registerResult.collectAsStateWithLifecycle()
 
     val state by viewmodel.tabState.collectAsStateWithLifecycle()
     val titlesAndIcons = viewmodel.titlesAndIcons
@@ -85,6 +97,189 @@ fun AuthScreen(
                 .padding(innerPadding),
             contentAlignment = Alignment.Center
         ) {
+            AnimatedVisibility(isSignInMode) {
+                when (val result = signInResult) {
+                    is AuthResult.Loading -> {
+                        AlertDialog(onDismissRequest = {
+                            viewmodel.switchSignInMode()
+                        }, icon = {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Login,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }, title = {
+                            Text(
+                                text = "Signing In",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }, text = {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .align(Alignment.CenterHorizontally)
+                                )
+                            }
+                        }, confirmButton = { })
+                    }
+
+                    is AuthResult.Success -> {
+                        // Handle successful sign-up
+                        navController.navigate(Dest.JournalScreen) {
+                            popUpTo(SubGraph.AuthGraph) {
+                                inclusive = true
+                            }
+                        }
+                    }
+
+                    is AuthResult.Error -> {
+                        // Handle sign-in error
+                        AlertDialog(icon = {
+                            Icon(
+                                Icons.Default.Error,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }, title = {
+                            Text(
+                                text = "Error",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }, text = {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = result.exception.message.toString(),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }, confirmButton = {
+                            TextButton(onClick = {
+                                viewmodel.switchSignInMode()
+                            }) {
+                                Text(text = "Retry?", fontWeight = FontWeight.Bold)
+                            }
+                        }, onDismissRequest = {
+                            viewmodel.switchSignInMode()
+                        })
+                    }
+                }
+            }
+
+            AnimatedVisibility(isRegisterMode) {
+                when (val result = registerResult) {
+                    is AuthResult.Loading -> {
+                        AlertDialog(onDismissRequest = {
+                            viewmodel.switchRegisterMode()
+                        }, icon = {
+                            Icon(
+                                Icons.Default.CloudUpload,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }, title = {
+                            Text(
+                                text = "Registering...",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }, text = {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .align(Alignment.CenterHorizontally)
+                                )
+                            }
+                        }, confirmButton = { })
+                    }
+
+                    is AuthResult.Success -> {
+                        // Handle successful register
+                        AlertDialog(icon = {
+                            Icon(
+                                Icons.Default.CloudDone,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }, title = {
+                            Text(
+                                text = "Register Successful",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }, text = {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "You have successfully registered.",
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }, confirmButton = {
+                            TextButton(onClick = {
+                                viewmodel.switchTabState()
+                                viewmodel.switchRegisterMode()
+                            }) {
+                                Text(
+                                    text = "Sign In", fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }, onDismissRequest = {
+                            viewmodel.switchRegisterMode()
+                            viewmodel.switchTabState()
+                        })
+
+                    }
+
+                    is AuthResult.Error -> {
+                        // Handle register error
+                        AlertDialog(icon = {
+                            Icon(
+                                Icons.Default.Error,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }, title = {
+                            Text(
+                                text = "Error",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }, text = {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(result.exception.message.toString())
+                            }
+                        }, confirmButton = {
+                            TextButton(onClick = {
+                                viewmodel.switchRegisterMode()
+                            }) {
+                                Text(text = "Retry?", fontWeight = FontWeight.Bold)
+                            }
+                        }, onDismissRequest = {
+                            viewmodel.switchRegisterMode()
+                        })
+                    }
+                }
+            }
             Column(
                 modifier = Modifier
                     .fillMaxSize(0.9f)
@@ -301,9 +496,9 @@ fun AuthScreen(
                                 && confirmPassword.isNotBlank() && confirmPassword == password
                     }, onClick = {
                         if (state == 0) {
-                            //viewmodel.signIn(email, password)
+                            viewmodel.signIn(email, password)
                         } else {
-                            //viewmodel.register(email, password)
+                            viewmodel.register(email, password)
                         }
                     }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)
                 ) {

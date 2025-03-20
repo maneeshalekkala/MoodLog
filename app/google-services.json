@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "938536832056",
+    "project_id": "moodlog-997fe",
+    "storage_bucket": "moodlog-997fe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:938536832056:android:bbece32f76bdbe3d67aacd",
+        "android_client_info": {
+          "package_name": "uk.ac.tees.mad.moodlog"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEgty9BpDCDOPdN8Z2aoZ-Wzymy0PW5Zw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

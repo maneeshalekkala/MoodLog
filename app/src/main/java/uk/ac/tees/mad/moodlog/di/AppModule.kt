@@ -16,8 +16,8 @@ val appModule = module {
     single { NetworkRepository(get()) }
 
     // Firebase
-    //single { FirebaseAuth.getInstance() }
-    //single { AuthRepository(get()) }
+    single { FirebaseAuth.getInstance() }
+    single { AuthRepository(get()) }
 
     // ViewModels
     viewModelOf(::SplashScreenViewModel)
