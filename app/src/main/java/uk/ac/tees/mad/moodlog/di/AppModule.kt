@@ -8,6 +8,7 @@ import uk.ac.tees.mad.moodlog.model.network.NetworkConnectivityManager
 import uk.ac.tees.mad.moodlog.model.repository.AuthRepository
 import uk.ac.tees.mad.moodlog.model.repository.NetworkRepository
 import uk.ac.tees.mad.moodlog.viewmodel.AuthScreenViewModel
+import uk.ac.tees.mad.moodlog.viewmodel.JournalScreenViewModel
 import uk.ac.tees.mad.moodlog.viewmodel.SplashScreenViewModel
 
 val appModule = module {
@@ -22,4 +23,5 @@ val appModule = module {
     // ViewModels
     viewModelOf(::SplashScreenViewModel)
     viewModelOf(::AuthScreenViewModel)
+    viewModelOf(::JournalScreenViewModel)
 }
