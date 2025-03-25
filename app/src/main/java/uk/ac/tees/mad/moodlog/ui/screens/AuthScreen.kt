@@ -402,18 +402,16 @@ fun AuthScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequesterPassword),
-                    visualTransformation =
-                        if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
-                        imeAction = if(state == 0) ImeAction.Done else ImeAction.Next
+                        imeAction = if (state == 0) ImeAction.Done else ImeAction.Next
                     ),
-                    keyboardActions = KeyboardActions(
-                        onNext = {
-                        focusRequesterConfirmPassword.requestFocus() },
-                        onDone = {
-                            focusManager.clearFocus()
-                        }),
+                    keyboardActions = KeyboardActions(onNext = {
+                        focusRequesterConfirmPassword.requestFocus()
+                    }, onDone = {
+                        focusManager.clearFocus()
+                    }),
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true,
                     trailingIcon = {
@@ -421,8 +419,7 @@ fun AuthScreen(
                             viewmodel.togglePasswordVisibility()
                         }) {
                             Icon(
-                                imageVector =
-                                    if (isPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                imageVector = if (isPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                 contentDescription = "Toggle Password Visibility",
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
@@ -438,7 +435,7 @@ fun AuthScreen(
                             viewmodel.updateConfirmPassword(it)
                         },
                         isError = if (confirmPassword.isNotBlank()) confirmPassword != password else false,
-                        supportingText ={
+                        supportingText = {
                             if (confirmPassword.isNotBlank() && confirmPassword != password) {
                                 Text(
                                     text = "Passwords do not match",
@@ -446,7 +443,7 @@ fun AuthScreen(
                                     color = MaterialTheme.colorScheme.error
                                 )
                             }
-                        } ,
+                        },
                         label = {
                             Text(
                                 text = "Confirm Password"
@@ -462,8 +459,7 @@ fun AuthScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .focusRequester(focusRequesterConfirmPassword),
-                        visualTransformation =
-                            if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password, imeAction = ImeAction.Done
                         ),
@@ -477,8 +473,7 @@ fun AuthScreen(
                                 viewmodel.togglePasswordVisibility()
                             }) {
                                 Icon(
-                                    imageVector =
-                                        if (isPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                    imageVector = if (isPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                     contentDescription = "Toggle Password Visibility",
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
@@ -492,8 +487,7 @@ fun AuthScreen(
                     enabled = if (state == 0) {
                         email.isNotBlank() && password.isNotBlank()
                     } else {
-                        email.isNotBlank() && password.isNotBlank()
-                                && confirmPassword.isNotBlank() && confirmPassword == password
+                        email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank() && confirmPassword == password
                     }, onClick = {
                         if (state == 0) {
                             viewmodel.signIn(email, password)

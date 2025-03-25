@@ -13,8 +13,7 @@ import uk.ac.tees.mad.moodlog.model.repository.AuthRepository
 import uk.ac.tees.mad.moodlog.model.repository.NetworkRepository
 
 class SplashScreenViewModel(
-    private val networkRepository: NetworkRepository,
-    private val authRepository: AuthRepository
+    private val networkRepository: NetworkRepository, private val authRepository: AuthRepository
 ) : ViewModel() {
     private val _isNetworkAvailable: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val isNetworkAvailable: StateFlow<Boolean> = _isNetworkAvailable.asStateFlow()
@@ -64,14 +63,14 @@ class SplashScreenViewModel(
 
 //                        }
                     } else {
-                       _loadingState.value = LoadingState.Error(message)
+                        _loadingState.value = LoadingState.Error(message)
                     }
                 }
             }
         }
     }
 
-//    fun getCurrentUserId(): String? {
+    //    fun getCurrentUserId(): String? {
 //        return authRepository.getCurrentUserId()
 //    }
 //
