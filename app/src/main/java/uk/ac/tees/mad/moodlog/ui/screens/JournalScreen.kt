@@ -1,5 +1,8 @@
 package uk.ac.tees.mad.moodlog.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -52,11 +55,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import coil3.compose.AsyncImage
 import org.koin.androidx.compose.koinViewModel
 import uk.ac.tees.mad.moodlog.view.navigation.SubGraph
+import uk.ac.tees.mad.moodlog.view.utils.ImageFileProvider
 import uk.ac.tees.mad.moodlog.viewmodel.JournalScreenViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -67,6 +73,7 @@ import java.util.Locale
 fun JournalScreen(
     navController: NavHostController, viewmodel: JournalScreenViewModel = koinViewModel()
 ) {
+    val context = LocalContext.current
     Scaffold(
         modifier = Modifier.fillMaxSize(), topBar = {
             TopAppBar(title = { Text(text = "Journal Screen") })
@@ -234,6 +241,21 @@ fun JournalScreen(
 
                 // Add Photo
                 item {
+                    var hasImage by remember {
+                        mutableStateOf(false)
+                    }
+                    var imageUri by remember {
+                        mutableStateOf<Uri?>(null)
+                    }
+                    val imagePicker = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.GetContent(), onResult = { uri ->
+                            hasImage = uri != null
+                            imageUri = uri
+                        })
+                    val cameraLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.TakePicture(), onResult = { success ->
+                            hasImage = success
+                        })
                     Text(
                         text = "Add Photo",
                         style = MaterialTheme.typography.titleMedium,
@@ -246,7 +268,6 @@ fun JournalScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Photo placeholder
                         Box(
                             modifier = Modifier
                                 .size(width = 200.dp, height = 200.dp)
@@ -258,23 +279,38 @@ fun JournalScreen(
                                     shape = MaterialTheme.shapes.extraLarge
                                 ), contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.AddAPhoto,
-                                contentDescription = "Add Photo",
-                                modifier = Modifier.size(40.dp),
-                                tint = Color.Gray
-                            )
+                            if (hasImage && imageUri != null) {
+                                AsyncImage(
+                                    model = imageUri,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentDescription = "Selected image",
+                                )
+                            } else {
+                                // Photo placeholder
+                                Icon(
+                                    imageVector = Icons.Default.AddAPhoto,
+                                    contentDescription = "Add Photo",
+                                    modifier = Modifier.size(40.dp),
+                                    tint = Color.Gray
+                                )
+                            }
                         }
                         Column {
                             Button(
-                                onClick = { /*TODO*/ },
-                            ) {
-                                Text(text = "Capture Image")
-                            }
-                            Button(
-                                onClick = { /*TODO*/ },
+                                onClick = {
+                                    imagePicker.launch("image/*")
+                                },
                             ) {
                                 Text(text = "Select Image")
+                            }
+                            Button(
+                                onClick = {
+                                    val uri = ImageFileProvider.getImageUri(context)
+                                    imageUri = uri
+                                    cameraLauncher.launch(uri)
+                                },
+                            ) {
+                                Text(text = "Take Photo")
                             }
                         }
 

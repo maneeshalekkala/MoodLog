@@ -73,9 +73,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
     // Coil
-    runtimeOnly("io.coil-kt.coil3:coil-compose:3.1.0")
-    runtimeOnly("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
-    runtimeOnly("io.coil-kt.coil3:coil-svg:3.1.0")
+    implementation("io.coil-kt.coil3:coil-compose:3.1.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
+    implementation("io.coil-kt.coil3:coil-svg:3.1.0")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.9.0"))

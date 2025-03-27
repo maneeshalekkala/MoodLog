@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
 //            setKeepOnScreenCondition {
 //                // Condition to check if the app is still loading and showing the splash screen or not.
 //                TODO()
+//                TODO(Check Permissions granted or not (Camera, Storage, Location))
 //            }
             setOnExitAnimationListener { screen ->
                 val zoomX = ObjectAnimator.ofFloat(
