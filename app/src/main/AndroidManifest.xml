@@ -40,7 +40,7 @@
 
         <provider
             android:name=".view.utils.ImageFileProvider"
-            android:authorities="com.francescsoftware.composeplayground.fileprovider"
+            android:authorities="uk.ac.tees.mad.moodlog.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

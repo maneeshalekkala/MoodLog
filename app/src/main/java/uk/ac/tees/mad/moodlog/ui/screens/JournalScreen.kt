@@ -1,8 +1,10 @@
 package uk.ac.tees.mad.moodlog.ui.screens
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -58,11 +60,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import org.koin.androidx.compose.koinViewModel
+import uk.ac.tees.mad.moodlog.MainActivity
 import uk.ac.tees.mad.moodlog.view.navigation.SubGraph
 import uk.ac.tees.mad.moodlog.view.utils.ImageFileProvider
+import uk.ac.tees.mad.moodlog.view.utils.LocationUtils
 import uk.ac.tees.mad.moodlog.viewmodel.JournalScreenViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -74,6 +79,39 @@ fun JournalScreen(
     navController: NavHostController, viewmodel: JournalScreenViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
+    val locationUtils = LocationUtils(context)
+    val location = viewmodel.location.value
+    val address = location?.let {
+        locationUtils.reverseGeocodeLocation(location)
+    }
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(), onResult = { permissions ->
+            if (permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
+                && permissions[android.Manifest.permission.ACCESS_FINE_LOCATION] == true) {
+                // I have access to location
+
+                locationUtils.requestLocationUpdates(viewmodel = viewmodel)
+            } else {
+                // Ask for permission
+                val rationalRequired = ActivityCompat.shouldShowRequestPermissionRationale(
+                    context as MainActivity, android.Manifest.permission.ACCESS_FINE_LOCATION
+                ) || ActivityCompat.shouldShowRequestPermissionRationale(
+                    context as MainActivity, android.Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+
+                if (rationalRequired) {
+                    Toast.makeText(context, "Location Permission Required", Toast.LENGTH_SHORT)
+                        .show()
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Location Permission Required, Please enable from settings",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        })
+
     Scaffold(
         modifier = Modifier.fillMaxSize(), topBar = {
             TopAppBar(title = { Text(text = "Journal Screen") })
@@ -247,6 +285,7 @@ fun JournalScreen(
                     var imageUri by remember {
                         mutableStateOf<Uri?>(null)
                     }
+                    val context = LocalContext.current
                     val imagePicker = rememberLauncherForActivityResult(
                         contract = ActivityResultContracts.GetContent(), onResult = { uri ->
                             hasImage = uri != null
@@ -305,6 +344,8 @@ fun JournalScreen(
                             }
                             Button(
                                 onClick = {
+                                    hasImage = false
+                                    imageUri = null
                                     val uri = ImageFileProvider.getImageUri(context)
                                     imageUri = uri
                                     cameraLauncher.launch(uri)
@@ -329,8 +370,20 @@ fun JournalScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { /* TODO: Open location picker */ },
-                        shape = MaterialTheme.shapes.extraLarge
+                            .clickable {
+                                if (locationUtils.hasLocationPermission(context)) {
+                                    // Permission already granted, update the location
+                                    locationUtils.requestLocationUpdates(viewmodel = viewmodel)
+                                } else {
+                                    //Request location permission
+                                    requestPermissionLauncher.launch(
+                                        arrayOf(
+                                            android.Manifest.permission.ACCESS_COARSE_LOCATION,
+                                            android.Manifest.permission.ACCESS_FINE_LOCATION
+                                        )
+                                    )
+                                }
+                            }, shape = MaterialTheme.shapes.extraLarge
                     ) {
                         Row(
                             modifier = Modifier
@@ -344,11 +397,18 @@ fun JournalScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Add your location",
-                                color = Color.Gray,
-                                modifier = Modifier.weight(1f)
-                            )
+                            AnimatedVisibility(address == null) {
+                                Text(
+                                    text = "Add your location",
+                                    color = Color.Gray,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            AnimatedVisibility(address != null) {
+                                Text(
+                                    text = "$address", modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
                 }
