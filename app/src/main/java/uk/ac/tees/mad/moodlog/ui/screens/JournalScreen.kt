@@ -49,7 +49,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -61,6 +60,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import org.koin.androidx.compose.koinViewModel
@@ -78,6 +78,9 @@ import java.util.Locale
 fun JournalScreen(
     navController: NavHostController, viewmodel: JournalScreenViewModel = koinViewModel()
 ) {
+    val sliderPosition by viewmodel.sliderPosition.collectAsStateWithLifecycle()
+    val mood by viewmodel.mood.collectAsStateWithLifecycle()
+
     val context = LocalContext.current
     val locationUtils = LocationUtils(context)
     val location = viewmodel.location.value
@@ -86,8 +89,7 @@ fun JournalScreen(
     }
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(), onResult = { permissions ->
-            if (permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
-                && permissions[android.Manifest.permission.ACCESS_FINE_LOCATION] == true) {
+            if (permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true && permissions[android.Manifest.permission.ACCESS_FINE_LOCATION] == true) {
                 // I have access to location
 
                 locationUtils.requestLocationUpdates(viewmodel = viewmodel)
@@ -132,6 +134,7 @@ fun JournalScreen(
                     val datePickerState = rememberDatePickerState()
                     var showDatePicker by remember { mutableStateOf(false) }
 
+                    viewmodel.updateSelectedDate(datePickerState.selectedDateMillis.toString())
                     val selectedDate = datePickerState.selectedDateMillis?.let {
                         SimpleDateFormat("EEEE, d MMMM, yyyy", Locale.getDefault()).format(Date(it))
                     } ?: SimpleDateFormat("EEEE, d MMMM, yyyy", Locale.getDefault()).format(Date())
@@ -197,12 +200,10 @@ fun JournalScreen(
                         modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
                     )
 
-                    var sliderPosition by remember { mutableFloatStateOf(2f) }
-
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Slider(
                             value = sliderPosition,
-                            onValueChange = { sliderPosition = it },
+                            onValueChange = { viewmodel.updateSliderPosition(it) },
                             valueRange = 0f..4f,
                             steps = 3
                         )
@@ -241,14 +242,7 @@ fun JournalScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = when (sliderPosition) {
-                                0f -> "Very Dissatisfied"
-                                1f -> "Dissatisfied"
-                                2f -> "Neutral"
-                                3f -> "Satisfied"
-                                4f -> "Very Satisfied"
-                                else -> "Mood"
-                            },
+                            text = mood,
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                         )
@@ -264,11 +258,11 @@ fun JournalScreen(
                         modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
                     )
 
-                    var noteContent by remember { mutableStateOf("") }
+                    val noteContent by viewmodel.journalContent.collectAsStateWithLifecycle()
 
                     OutlinedTextField(
                         value = noteContent,
-                        onValueChange = { noteContent = it },
+                        onValueChange = { viewmodel.updateJournalContent(it) },
                         placeholder = { Text("Write how you're feeling and why...") },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -416,7 +410,9 @@ fun JournalScreen(
                 // Save Button
                 item {
                     Button(
-                        onClick = { /* TODO: Save journal entry */ },
+                        onClick = {
+                            viewmodel.saveJournal()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp)
