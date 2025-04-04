@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -80,6 +81,8 @@ fun JournalScreen(
 ) {
     val sliderPosition by viewmodel.sliderPosition.collectAsStateWithLifecycle()
     val mood by viewmodel.mood.collectAsStateWithLifecycle()
+    val noteContent by viewmodel.journalContent.collectAsStateWithLifecycle()
+    val databaseData by viewmodel.journalData.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     val locationUtils = LocationUtils(context)
@@ -257,8 +260,6 @@ fun JournalScreen(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
                     )
-
-                    val noteContent by viewmodel.journalContent.collectAsStateWithLifecycle()
 
                     OutlinedTextField(
                         value = noteContent,
@@ -447,6 +448,23 @@ fun JournalScreen(
                         },
                     ) {
                         Text(text = "Log Out")
+                    }
+                }
+                item{
+                    Text(text = "Database Data")
+                }
+                items(databaseData, key = {it.id}) {data->
+                    Column{
+                        Text(text= data.id.toString())
+                        Text(text = data.journalMood)
+                        Text(text = data.journalTime)
+                        Text(text = data.journalDate)
+                        Text(text = data.journalContent)
+                        Text(text = data.journalLocationAddress)
+                        Text(text = data.journalLocationLatitude.toString())
+                        Text(text = data.journalLocationLongitude.toString())
+                        Text(text = data.journalImage)
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }

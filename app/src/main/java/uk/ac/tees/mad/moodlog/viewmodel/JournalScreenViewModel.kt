@@ -34,6 +34,13 @@ class JournalScreenViewModel
     private val _journalContent = MutableStateFlow("")
     val journalContent: StateFlow<String> = _journalContent.asStateFlow()
 
+    private val _journalData = MutableStateFlow<List<LocalJournalData>>(emptyList())
+    val journalData: StateFlow<List<LocalJournalData>> = _journalData.asStateFlow()
+
+    init{
+        getJournalDataForUser(authRepository.getCurrentUserId().toString())
+    }
+
     fun updateJournalContent(newContent: String) {
         _journalContent.value = newContent
     }
@@ -84,5 +91,12 @@ class JournalScreenViewModel
             )
             localJournalDataRepository.insertJournalData(journalData)
         }
+    }
+
+    fun getJournalDataForUser(userId: String): List<LocalJournalData> {
+        viewModelScope.launch {
+            _journalData.value = localJournalDataRepository.getAllJournalDataForUser(userId)
+        }
+        return journalData.value
     }
 }
