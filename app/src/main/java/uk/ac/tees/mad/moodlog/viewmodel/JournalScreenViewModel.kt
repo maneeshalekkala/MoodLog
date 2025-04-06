@@ -99,4 +99,10 @@ class JournalScreenViewModel
         }
         return journalData.value
     }
+
+    fun deleteJournalData(journalDataId: Int) {
+        viewModelScope.launch {
+            localJournalDataRepository.deleteJournalDataById(journalDataId)
+        }
+    }
 }

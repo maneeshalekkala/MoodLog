@@ -464,6 +464,11 @@ fun JournalScreen(
                         Text(text = data.journalLocationLatitude.toString())
                         Text(text = data.journalLocationLongitude.toString())
                         Text(text = data.journalImage)
+                        Button(onClick = {
+                            viewmodel.deleteJournalData(data.id)
+                        }){
+                            Text(text = "Delete")
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
