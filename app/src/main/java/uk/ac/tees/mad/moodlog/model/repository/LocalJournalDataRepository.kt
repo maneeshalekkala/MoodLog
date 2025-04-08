@@ -1,20 +1,22 @@
 package uk.ac.tees.mad.moodlog.model.repository
 
+import kotlinx.coroutines.flow.Flow
 import uk.ac.tees.mad.moodlog.model.dataclass.room.LocalJournalData
 import uk.ac.tees.mad.moodlog.model.room.LocalJournalDataDao
+import kotlin.text.insert
 
 class LocalJournalDataRepository(private val localJournalDataDao: LocalJournalDataDao) {
 
-    suspend fun insertJournalData(journalData: LocalJournalData) {
-        localJournalDataDao.insert(journalData)
+    suspend fun insertJournalData(journalData: LocalJournalData): Long {
+        return localJournalDataDao.insert(journalData)
     }
 
-    suspend fun upsertJournalData(journalData: LocalJournalData){
-        localJournalDataDao.upsert(journalData)
+    suspend fun upsertJournalData(journalData: LocalJournalData): Long {
+        return localJournalDataDao.upsert(journalData)
     }
 
-    suspend fun deleteJournalData(journalData: LocalJournalData) {
-        localJournalDataDao.delete(journalData)
+    suspend fun deleteJournalData(journalData: LocalJournalData): Int {
+        return localJournalDataDao.delete(journalData)
     }
 
     suspend fun getAllJournalDataForUser(userId: String): List<LocalJournalData> {
@@ -25,24 +27,24 @@ class LocalJournalDataRepository(private val localJournalDataDao: LocalJournalDa
         return localJournalDataDao.getJournalDataById(id)
     }
 
-    suspend fun getAllUnsyncedJournalData(): List<LocalJournalData> {
-        return localJournalDataDao.getAllUnsyncedJournalData()
+    fun getAllUnsyncedJournals(): Flow<List<LocalJournalData>> {
+        return localJournalDataDao.getUnsyncedJournals()
     }
 
-    suspend fun updateSyncStatus(id: Int) {
-        localJournalDataDao.updateSyncStatus(id)
+    suspend fun markAsSynced(id: Int): Int {
+        return localJournalDataDao.updateSyncStatus(id)
     }
 
-    suspend fun deleteAllJournalDataForUser(userId: String) {
-        localJournalDataDao.deleteAllJournalDataForUser(userId)
+    suspend fun deleteAllJournalDataForUser(userId: String): Int {
+        return localJournalDataDao.deleteAllJournalDataForUser(userId)
     }
 
-    suspend fun deleteJournalDataById(id: Int) {
-        localJournalDataDao.deleteJournalDataById(id)
+    suspend fun deleteJournalDataById(id: Int): Int {
+        return localJournalDataDao.deleteJournalDataById(id)
     }
 
-    suspend fun updateJournalData(journalData: LocalJournalData) {
-        localJournalDataDao.updateJournalData(
+    suspend fun updateJournalData(journalData: LocalJournalData): Int {
+        return localJournalDataDao.updateJournalData(
             journalData.id,
             journalData.journalContent,
             journalData.journalDate,

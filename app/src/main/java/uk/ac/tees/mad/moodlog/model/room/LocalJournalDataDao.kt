@@ -5,18 +5,19 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 import uk.ac.tees.mad.moodlog.model.dataclass.room.LocalJournalData
 
 @Dao
 interface LocalJournalDataDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(journalData: LocalJournalData)
+    suspend fun insert(journalData: LocalJournalData): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(journalData: LocalJournalData)
+    suspend fun upsert(journalData: LocalJournalData): Long
 
     @Delete
-    suspend fun delete(journalData: LocalJournalData)
+    suspend fun delete(journalData: LocalJournalData): Int
 
     @Query("SELECT * FROM local_journal_data WHERE userId = :userId")
     suspend fun getAllJournalDataForUser(userId: String): List<LocalJournalData>
@@ -25,16 +26,16 @@ interface LocalJournalDataDao {
     suspend fun getJournalDataById(id: Int): LocalJournalData?
 
     @Query("SELECT * FROM local_journal_data WHERE isSynced = 0")
-    suspend fun getAllUnsyncedJournalData(): List<LocalJournalData>
+    fun getUnsyncedJournals(): Flow<List<LocalJournalData>>
 
     @Query("UPDATE local_journal_data SET isSynced = 1 WHERE id = :id")
-    suspend fun updateSyncStatus(id: Int)
+    suspend fun updateSyncStatus(id: Int): Int
 
     @Query("DELETE FROM local_journal_data WHERE userId = :userId")
-    suspend fun deleteAllJournalDataForUser(userId: String)
+    suspend fun deleteAllJournalDataForUser(userId: String): Int
 
     @Query("DELETE FROM local_journal_data WHERE id = :id")
-    suspend fun deleteJournalDataById(id: Int)
+    suspend fun deleteJournalDataById(id: Int): Int
 
     @Query(
         """
@@ -62,5 +63,5 @@ interface LocalJournalDataDao {
         journalLocationAddress: String,
         journalImage: String,
         isSynced: Boolean
-    )
+    ): Int
 }

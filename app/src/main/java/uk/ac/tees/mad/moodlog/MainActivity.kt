@@ -10,10 +10,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
+import org.koin.android.ext.android.inject
+import uk.ac.tees.mad.moodlog.model.firestore.JournalSynchronizer
 import uk.ac.tees.mad.moodlog.ui.theme.MoodLogTheme
 import uk.ac.tees.mad.moodlog.view.navigation.SetupNavGraph
+import kotlin.getValue
 
 class MainActivity : ComponentActivity() {
+    private val journalSynchronizer: JournalSynchronizer by inject()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         installSplashScreen().apply {
@@ -41,6 +45,8 @@ class MainActivity : ComponentActivity() {
             }
         }
         enableEdgeToEdge()
+        //start synchronization
+        journalSynchronizer.startSync()
         setContent {
             MoodLogTheme {
                 val navController = rememberNavController()
