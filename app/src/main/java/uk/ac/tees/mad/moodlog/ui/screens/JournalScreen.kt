@@ -1,6 +1,9 @@
 package uk.ac.tees.mad.moodlog.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -49,6 +52,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +65,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
@@ -117,6 +122,53 @@ fun JournalScreen(
             }
         })
 
+    val requestPermissionLauncherCamera = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(), onResult = { permissions ->
+            if(permissions[android.Manifest.permission.CAMERA]==true
+                && permissions[android.Manifest.permission.READ_EXTERNAL_STORAGE]==true
+                && permissions[android.Manifest.permission.READ_MEDIA_IMAGES]==true) {
+                // I have access to camera
+            } else {
+                // Ask for permission
+                val rationalRequiredCamera = ActivityCompat.shouldShowRequestPermissionRationale(
+                    context as MainActivity, android.Manifest.permission.CAMERA
+                )
+                val rationalRequiredReadExternalStorage = ActivityCompat.shouldShowRequestPermissionRationale(
+                    context as MainActivity, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                val rationalRequiredReadMediaImages = ActivityCompat.shouldShowRequestPermissionRationale(
+                    context as MainActivity, android.Manifest.permission.READ_MEDIA_IMAGES)
+
+                if (rationalRequiredCamera) {
+                    Toast.makeText(context, "Camera Permission Required", Toast.LENGTH_SHORT)
+                        .show()
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Camera Permission Required, Please enable from settings",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                if(rationalRequiredReadExternalStorage){
+                    Toast.makeText(context, "Read External Storage Permission Required", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Read External Storage Permission Required, Please enable from settings",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                if(rationalRequiredReadMediaImages){
+                    Toast.makeText(context, "Read Media Images Permission Required", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Read Media Images Permission Required, Please enable from settings",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        })
+
     Scaffold(
         modifier = Modifier.fillMaxSize(), topBar = {
             TopAppBar(title = { Text(text = "Journal Screen") })
@@ -137,10 +189,13 @@ fun JournalScreen(
                     val datePickerState = rememberDatePickerState()
                     var showDatePicker by remember { mutableStateOf(false) }
 
-                    viewmodel.updateSelectedDate(datePickerState.selectedDateMillis.toString())
                     val selectedDate = datePickerState.selectedDateMillis?.let {
                         SimpleDateFormat("EEEE, d MMMM, yyyy", Locale.getDefault()).format(Date(it))
                     } ?: SimpleDateFormat("EEEE, d MMMM, yyyy", Locale.getDefault()).format(Date())
+
+                    if (datePickerState.selectedDateMillis != null) {
+                        viewmodel.updateSelectedDate(datePickerState.selectedDateMillis.toString())
+                    }
 
                     Text(
                         text = "Date",
@@ -179,6 +234,7 @@ fun JournalScreen(
 
                     if (showDatePicker) {
                         DatePickerDialog(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
                             onDismissRequest = { showDatePicker = false },
                             confirmButton = {
                                 TextButton(onClick = { showDatePicker = false }) {
@@ -190,7 +246,8 @@ fun JournalScreen(
                                     Text("Cancel")
                                 }
                             }) {
-                            DatePicker(state = datePickerState)
+                            DatePicker(
+                                state = datePickerState)
                         }
                     }
                 }
@@ -339,11 +396,23 @@ fun JournalScreen(
                             }
                             Button(
                                 onClick = {
-                                    hasImage = false
-                                    imageUri = null
-                                    val uri = ImageFileProvider.getImageUri(context)
-                                    imageUri = uri
-                                    cameraLauncher.launch(uri)
+//                                    if(
+//                                        ImageFileProvider.hasCameraPermission(context)
+//                                    ){
+                                        hasImage = false
+                                        imageUri = null
+                                        val uri = ImageFileProvider.getImageUri(context)
+                                        imageUri = uri
+                                        cameraLauncher.launch(uri)
+//                                } else {
+//                                            requestPermissionLauncherCamera.launch(
+//                                                arrayOf(
+//                                                    android.Manifest.permission.CAMERA,
+//                                                    android.Manifest.permission.READ_EXTERNAL_STORAGE,
+//                                                    android.Manifest.permission.READ_MEDIA_IMAGES
+//                                                )
+//                                            )
+//                                    }
                                 },
                             ) {
                                 Text(text = "Take Photo")
@@ -374,7 +443,7 @@ fun JournalScreen(
                                     requestPermissionLauncher.launch(
                                         arrayOf(
                                             android.Manifest.permission.ACCESS_COARSE_LOCATION,
-                                            android.Manifest.permission.ACCESS_FINE_LOCATION
+                                            android.Manifest.permission.ACCESS_FINE_LOCATION,
                                         )
                                     )
                                 }
@@ -412,6 +481,7 @@ fun JournalScreen(
                 item {
                     Button(
                         onClick = {
+                            viewmodel.updateAddress(address.toString())
                             viewmodel.saveJournal()
                         },
                         modifier = Modifier
@@ -465,7 +535,7 @@ fun JournalScreen(
                         Text(text = data.journalLocationLongitude.toString())
                         Text(text = data.journalImage)
                         Button(onClick = {
-                            viewmodel.deleteJournalData(data.id)
+                            viewmodel.deleteJournalData(data)
                         }){
                             Text(text = "Delete")
                         }

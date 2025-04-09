@@ -11,28 +11,28 @@ class LocalJournalDataRepository(private val localJournalDataDao: LocalJournalDa
         return localJournalDataDao.insert(journalData)
     }
 
-    suspend fun upsertJournalData(journalData: LocalJournalData): Long {
+    suspend fun upsertJournalData(journalData: LocalJournalData) {
         return localJournalDataDao.upsert(journalData)
     }
 
-    suspend fun deleteJournalData(journalData: LocalJournalData): Int {
+    suspend fun deleteJournalData(journalData: LocalJournalData) {
         return localJournalDataDao.delete(journalData)
     }
 
-    suspend fun getAllJournalDataForUser(userId: String): List<LocalJournalData> {
-        return localJournalDataDao.getAllJournalDataForUser(userId)
+    fun getAllJournalDataForUser(userId: String): Flow<List<LocalJournalData>> {
+        return localJournalDataDao.getAllJournalDataForUser(userId) // Return Flow
     }
 
     suspend fun getJournalDataById(id: Int): LocalJournalData? {
         return localJournalDataDao.getJournalDataById(id)
     }
 
-    fun getAllUnsyncedJournals(): Flow<List<LocalJournalData>> {
-        return localJournalDataDao.getUnsyncedJournals()
+    fun getJournalsForSync(): Flow<List<LocalJournalData>> {
+        return localJournalDataDao.getJournalsForSync()
     }
 
-    suspend fun markAsSynced(id: Int): Int {
-        return localJournalDataDao.updateSyncStatus(id)
+    suspend fun updateFirestoreId(id: Int, firestoreId: String) {
+        localJournalDataDao.updateFirestoreId(id, firestoreId)
     }
 
     suspend fun deleteAllJournalDataForUser(userId: String): Int {
@@ -43,8 +43,8 @@ class LocalJournalDataRepository(private val localJournalDataDao: LocalJournalDa
         return localJournalDataDao.deleteJournalDataById(id)
     }
 
-    suspend fun updateJournalData(journalData: LocalJournalData): Int {
-        return localJournalDataDao.updateJournalData(
+    suspend fun updateJournalData(journalData: LocalJournalData) {
+        localJournalDataDao.updateJournalData(
             journalData.id,
             journalData.journalContent,
             journalData.journalDate,
@@ -54,7 +54,8 @@ class LocalJournalDataRepository(private val localJournalDataDao: LocalJournalDa
             journalData.journalLocationLongitude,
             journalData.journalLocationAddress,
             journalData.journalImage,
-            journalData.isSynced
+            journalData.needsUpdate,
+            journalData.isDeleted
         )
     }
 }

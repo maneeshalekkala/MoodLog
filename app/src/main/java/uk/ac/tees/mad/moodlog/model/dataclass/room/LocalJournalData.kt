@@ -6,14 +6,16 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "local_journal_data")
 data class LocalJournalData(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val userId: String= "",
-    val journalContent: String= "",
-    val journalDate: String= "",
-    val journalTime: String= "",
-    val journalMood: String= "",
-    val journalLocationLatitude: Double= 0.0,
-    val journalLocationLongitude: Double= 0.0,
-    val journalLocationAddress: String= "",
+    var firestoreId: String = "",
+    val userId: String = "",
+    val journalContent: String = "",
+    val journalDate: String = "",
+    val journalTime: String = "",
+    val journalMood: String = "",
+    val journalLocationLatitude: Double = 0.0,
+    val journalLocationLongitude: Double = 0.0,
+    val journalLocationAddress: String = "",
     val journalImage: String = "",
-    val isSynced: Boolean = false
+    val isDeleted: Boolean = false,
+    val needsUpdate: Boolean = false
 )

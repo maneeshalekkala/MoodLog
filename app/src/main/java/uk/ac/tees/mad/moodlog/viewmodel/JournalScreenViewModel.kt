@@ -7,14 +7,19 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import uk.ac.tees.mad.moodlog.model.dataclass.location.LocationData
 import uk.ac.tees.mad.moodlog.model.dataclass.room.LocalJournalData
 import uk.ac.tees.mad.moodlog.model.repository.AuthRepository
 import uk.ac.tees.mad.moodlog.model.repository.LocalJournalDataRepository
+import uk.ac.tees.mad.moodlog.view.utils.LocationUtils
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlin.time.Duration.Companion.days
 
-class JournalScreenViewModel
-    (
+class JournalScreenViewModel(
     private val authRepository: AuthRepository,
     private val localJournalDataRepository: LocalJournalDataRepository
 ) : ViewModel() {
@@ -22,7 +27,10 @@ class JournalScreenViewModel
     private val _location = mutableStateOf<LocationData?>(null)
     val location: State<LocationData?> = _location
 
-    private val _selectedDate = MutableStateFlow("")
+    private val _address = MutableStateFlow("")
+    val address: StateFlow<String> = _address.asStateFlow()
+
+    private val _selectedDate = MutableStateFlow(System.currentTimeMillis().toString())
     val selectedDate: StateFlow<String> = _selectedDate.asStateFlow()
 
     private val _sliderPosition = MutableStateFlow(2f)
@@ -37,7 +45,7 @@ class JournalScreenViewModel
     private val _journalData = MutableStateFlow<List<LocalJournalData>>(emptyList())
     val journalData: StateFlow<List<LocalJournalData>> = _journalData.asStateFlow()
 
-    init{
+    init {
         getJournalDataForUser(authRepository.getCurrentUserId().toString())
     }
 
@@ -71,6 +79,10 @@ class JournalScreenViewModel
         _location.value = newLocation
     }
 
+    fun updateAddress(newAddress: String) {
+        _address.value = newAddress
+    }
+
     fun logOut() {
         authRepository.signOut()
     }
@@ -81,28 +93,37 @@ class JournalScreenViewModel
                 userId = authRepository.getCurrentUserId().toString(),
                 journalContent = journalContent.value,
                 journalDate = selectedDate.value,
-                journalTime = "00:00",
+                journalTime = System.currentTimeMillis().toString(),
                 journalMood = mood.value,
                 journalLocationLatitude = location.value?.latitude ?: 0.0,
                 journalLocationLongitude = location.value?.longitude ?: 0.0,
-                journalLocationAddress = "",
+                journalLocationAddress = address.value,
                 journalImage = "",
-                isSynced = false
+                firestoreId = ""
             )
             localJournalDataRepository.insertJournalData(journalData)
         }
     }
 
-    fun getJournalDataForUser(userId: String): List<LocalJournalData> {
+    //changed return type to flow
+    fun getJournalDataForUser(userId: String) {
         viewModelScope.launch {
-            _journalData.value = localJournalDataRepository.getAllJournalDataForUser(userId)
+            localJournalDataRepository.getAllJournalDataForUser(userId).collectLatest { journalList ->
+                _journalData.value = journalList
+            }
         }
-        return journalData.value
     }
 
-    fun deleteJournalData(journalDataId: Int) {
+    fun deleteJournalData(journalData: LocalJournalData) {
         viewModelScope.launch {
-            localJournalDataRepository.deleteJournalDataById(journalDataId)
+            //soft delete
+            localJournalDataRepository.updateJournalData(journalData.copy(isDeleted = true))
+        }
+    }
+
+    fun updateJournalData(journalData: LocalJournalData) {
+        viewModelScope.launch {
+            localJournalDataRepository.updateJournalData(journalData.copy(needsUpdate = true))
         }
     }
 }

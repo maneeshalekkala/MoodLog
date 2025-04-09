@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import uk.ac.tees.mad.moodlog.model.dataclass.firebase.FirestoreResult
 import uk.ac.tees.mad.moodlog.model.dataclass.room.LocalJournalData
-import kotlin.toString
 
 class JournalFirestoreRepository(
     private val firestore: FirebaseFirestore
@@ -16,16 +15,17 @@ class JournalFirestoreRepository(
     private fun getJournalCollection(userId: String) =
         firestore.collection("users").document(userId).collection("journals")
 
-    fun addJournalEntry(userId: String, journalEntry: LocalJournalData): Flow<FirestoreResult<Boolean>> = flow {
+    fun addJournalEntry(userId: String, journalEntry: LocalJournalData): Flow<FirestoreResult<String>> = flow {
         emit(FirestoreResult.Loading)
         try {
             // Convert LocalJournalData to a Map (Firestore document)
-            val journalMap = journalEntry.toMap()
+            val journalMap = journalEntry.toMapForFirestore()
 
             // Add the journal entry to Firestore
-            getJournalCollection(userId).add(journalMap).await()
+            val documentReference = getJournalCollection(userId).add(journalMap).await()
 
-            emit(FirestoreResult.Success(true))
+            val firestoreId = documentReference.id
+            emit(FirestoreResult.Success(firestoreId))
         } catch (e: Exception) {
             emit(FirestoreResult.Error(e))
         }
@@ -34,10 +34,10 @@ class JournalFirestoreRepository(
     fun getJournalEntries(userId: String): Flow<FirestoreResult<List<LocalJournalData>>> = flow {
         emit(FirestoreResult.Loading)
         try {
-            val querySnapshot = getJournalCollection(userId).orderBy("id", Query.Direction.ASCENDING).get().await()
+            val querySnapshot = getJournalCollection(userId).orderBy("journalDate", Query.Direction.ASCENDING).get().await()
             val journalEntries = querySnapshot.documents.mapNotNull { document ->
                 val journalEntry = document.toObject(LocalJournalData::class.java)
-                journalEntry?.copy(id = document.id.toIntOrNull() ?: 0)
+                journalEntry?.copy(firestoreId = document.id) // set firestoreId
             }
             emit(FirestoreResult.Success(journalEntries))
         } catch (e: Exception) {
@@ -49,10 +49,10 @@ class JournalFirestoreRepository(
         emit(FirestoreResult.Loading)
         try {
             // Find the correct Firestore document ID
-            val firestoreId = journalEntry.id.toString()
+            val firestoreId = journalEntry.firestoreId
             if(firestoreId.isNotBlank()){
                 // Update the journal entry
-                getJournalCollection(userId).document(firestoreId).set(journalEntry.toMap()).await()
+                getJournalCollection(userId).document(firestoreId).set(journalEntry.toMapForFirestore()).await()
                 emit(FirestoreResult.Success(true))
             }else{
                 emit(FirestoreResult.Error(Exception("Can not find journal in the database")))
@@ -63,12 +63,29 @@ class JournalFirestoreRepository(
         }
     }
 
-
-    fun deleteJournalEntry(userId: String, journalEntryId: Int): Flow<FirestoreResult<Boolean>> = flow {
+        fun updateFirestoreJournalEntry(userId: String, journalEntry: LocalJournalData): Flow<FirestoreResult<Boolean>> = flow {
         emit(FirestoreResult.Loading)
         try {
             // Find the correct Firestore document ID
-            val firestoreId = journalEntryId.toString()
+            val firestoreId = journalEntry.firestoreId
+            if (firestoreId.isNotBlank()) {
+                // Update the journal entry, excluding isDeleted and needsUpdate
+                getJournalCollection(userId).document(firestoreId).update(journalEntry.toMapForFirestore()).await()
+                emit(FirestoreResult.Success(true))
+            } else {
+                emit(FirestoreResult.Error(Exception("Firestore ID is missing for journal entry.")))
+            }
+        } catch (e: Exception) {
+            emit(FirestoreResult.Error(e))
+        }
+    }
+
+
+    fun deleteJournalEntry(userId: String, journalEntry: LocalJournalData): Flow<FirestoreResult<Boolean>> = flow {
+        emit(FirestoreResult.Loading)
+        try {
+            // Find the correct Firestore document ID
+            val firestoreId = journalEntry.firestoreId
             getJournalCollection(userId).document(firestoreId).delete().await()
             emit(FirestoreResult.Success(true))
         } catch (e: Exception) {
@@ -77,10 +94,9 @@ class JournalFirestoreRepository(
     }
 }
 
-// Extension function to convert LocalJournalData to a Map
-fun LocalJournalData.toMap(): Map<String, Any?> {
+// Extension function to convert LocalJournalData to a Map for Firestore
+fun LocalJournalData.toMapForFirestore(): Map<String, Any?> {
     return mapOf(
-        "id" to id,
         "userId" to userId,
         "journalContent" to journalContent,
         "journalDate" to journalDate,
@@ -90,6 +106,5 @@ fun LocalJournalData.toMap(): Map<String, Any?> {
         "journalLocationLongitude" to journalLocationLongitude,
         "journalLocationAddress" to journalLocationAddress,
         "journalImage" to journalImage,
-        "isSynced" to isSynced,
     )
 }

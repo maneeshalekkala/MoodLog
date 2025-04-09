@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 import uk.ac.tees.mad.moodlog.model.dataclass.room.LocalJournalData
 
@@ -13,23 +14,23 @@ interface LocalJournalDataDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(journalData: LocalJournalData): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(journalData: LocalJournalData): Long
+    @Upsert
+    suspend fun upsert(journalData: LocalJournalData)
 
     @Delete
-    suspend fun delete(journalData: LocalJournalData): Int
+    suspend fun delete(journalData: LocalJournalData)
 
-    @Query("SELECT * FROM local_journal_data WHERE userId = :userId")
-    suspend fun getAllJournalDataForUser(userId: String): List<LocalJournalData>
+    @Query("SELECT * FROM local_journal_data WHERE userId = :userId AND isDeleted = 0")
+    fun getAllJournalDataForUser(userId: String): Flow<List<LocalJournalData>> // Return Flow
 
     @Query("SELECT * FROM local_journal_data WHERE id = :id")
     suspend fun getJournalDataById(id: Int): LocalJournalData?
 
-    @Query("SELECT * FROM local_journal_data WHERE isSynced = 0")
-    fun getUnsyncedJournals(): Flow<List<LocalJournalData>>
+    @Query("SELECT * FROM local_journal_data WHERE (firestoreId ='' OR needsUpdate = 1 OR isDeleted= 1)")
+    fun getJournalsForSync(): Flow<List<LocalJournalData>>
 
-    @Query("UPDATE local_journal_data SET isSynced = 1 WHERE id = :id")
-    suspend fun updateSyncStatus(id: Int): Int
+    @Query("UPDATE local_journal_data SET firestoreId = :firestoreId WHERE id = :id")
+    suspend fun updateFirestoreId(id: Int, firestoreId: String)
 
     @Query("DELETE FROM local_journal_data WHERE userId = :userId")
     suspend fun deleteAllJournalDataForUser(userId: String): Int
@@ -47,8 +48,9 @@ interface LocalJournalDataDao {
             journalLocationLatitude = :journalLocationLatitude, 
             journalLocationLongitude = :journalLocationLongitude, 
             journalLocationAddress = :journalLocationAddress, 
-            journalImage = :journalImage, 
-            isSynced = :isSynced
+            journalImage = :journalImage,
+            needsUpdate = :needsUpdate,
+            isDeleted = :isDeleted
         WHERE id = :id
         """
     )
@@ -62,6 +64,7 @@ interface LocalJournalDataDao {
         journalLocationLongitude: Double,
         journalLocationAddress: String,
         journalImage: String,
-        isSynced: Boolean
+        needsUpdate: Boolean,
+        isDeleted: Boolean
     ): Int
 }
