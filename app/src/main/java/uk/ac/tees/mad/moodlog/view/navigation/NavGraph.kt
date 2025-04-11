@@ -26,7 +26,7 @@ fun SetupNavGraph(
                 AuthScreen(navController = navController)
             }
         }
-        navigation<SubGraph.HomeGraph>(startDestination = Dest.JournalScreen) {
+        navigation<SubGraph.HomeGraph>(startDestination = Dest.HistoryScreen) {
             composable<Dest.JournalScreen> {
                 JournalScreen(navController = navController)
             }
