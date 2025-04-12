@@ -16,18 +16,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,15 +42,21 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import org.koin.androidx.compose.koinViewModel
 import uk.ac.tees.mad.moodlog.R
 import uk.ac.tees.mad.moodlog.model.dataclass.room.LocalJournalData
+import uk.ac.tees.mad.moodlog.view.navigation.Dest
+import uk.ac.tees.mad.moodlog.viewmodel.HistoryScreenViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
-    navController: NavHostController? = null, //for mock up only
+    navController: NavHostController,
+    historyScreenViewModel: HistoryScreenViewModel = koinViewModel()
 ) {
+    val journalData by historyScreenViewModel.journalData.collectAsStateWithLifecycle()
     var searchText by remember { mutableStateOf("") }
     var isFilterExpanded by remember { mutableStateOf(false) }
     // Mock data for demonstration
@@ -85,6 +94,15 @@ fun HistoryScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(title = { Text("History") })
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    navController.navigate(Dest.JournalScreen)
+                }
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "Add Journal Entry")
+            }
         }
     ) { innerPadding ->
         Column(
@@ -133,7 +151,7 @@ fun HistoryScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
-                items(mockJournalEntries) { entry ->
+                items(journalData) { entry ->
                     JournalEntryItem(entry = entry)
                 }
             }
@@ -155,15 +173,16 @@ fun JournalEntryItem(entry: LocalJournalData) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = "${entry.journalDate} ${entry.journalTime}", fontWeight = FontWeight.Bold)
-                Text(text = entry.journalMood)
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = entry.journalMood)
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = entry.journalContent)
             Spacer(modifier = Modifier.height(8.dp))
             entry.journalLocationAddress?.let { Text(text = "Location: $it") }
 
             // Displaying image, only if not null
-            if (!entry.journalImage.isNullOrEmpty()) {
+            if (entry.journalImage.isNullOrEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Image(
                     painter = painterResource(id = R.drawable.ic_launcher_foreground), //TODO replace with actual image

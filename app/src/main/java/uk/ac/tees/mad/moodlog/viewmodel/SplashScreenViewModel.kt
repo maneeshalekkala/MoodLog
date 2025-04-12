@@ -10,10 +10,15 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import uk.ac.tees.mad.moodlog.model.dataclass.state.LoadingState
 import uk.ac.tees.mad.moodlog.model.repository.AuthRepository
+import uk.ac.tees.mad.moodlog.model.repository.JournalFirestoreRepository
+import uk.ac.tees.mad.moodlog.model.repository.LocalJournalDataRepository
 import uk.ac.tees.mad.moodlog.model.repository.NetworkRepository
 
 class SplashScreenViewModel(
-    private val networkRepository: NetworkRepository, private val authRepository: AuthRepository
+    private val networkRepository: NetworkRepository,
+    private val authRepository: AuthRepository,
+    private val localJournalDataRepository: LocalJournalDataRepository,
+    private val journalFirestoreRepository: JournalFirestoreRepository,
 ) : ViewModel() {
     private val _isNetworkAvailable: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val isNetworkAvailable: StateFlow<Boolean> = _isNetworkAvailable.asStateFlow()
@@ -52,16 +57,10 @@ class SplashScreenViewModel(
                     delay(5000)
                     val message = "No internet connection"
                     if (authRepository.isSignedIn()) {
-//                        if (homeScreenStockDataRepository.getHomeScreenStockDataCountForUser(
-//                                getCurrentUserId().toString()
-//                            ) == 0
-//                        ) {
-//                            _loadingState.value = LoadingState.Error(message)
-//                        } else {
-
+                        // Load user data from firebase
+                        // if loading done, put success
                         _loadingState.value = LoadingState.Success(Any())
 
-//                        }
                     } else {
                         _loadingState.value = LoadingState.Error(message)
                     }
@@ -70,10 +69,10 @@ class SplashScreenViewModel(
         }
     }
 
-    //    fun getCurrentUserId(): String? {
-//        return authRepository.getCurrentUserId()
-//    }
-//
+        fun getCurrentUserId(): String? {
+        return authRepository.getCurrentUserId()
+    }
+
     fun isSignedIn(): Boolean {
         return authRepository.isSignedIn()
     }
