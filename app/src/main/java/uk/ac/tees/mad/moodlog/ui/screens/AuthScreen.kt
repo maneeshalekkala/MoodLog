@@ -128,7 +128,7 @@ fun AuthScreen(
 
                     is AuthResult.Success -> {
                         // Handle successful sign-up
-                        navController.navigate(Dest.JournalScreen) {
+                        navController.navigate(SubGraph.HomeGraph) {
                             popUpTo(SubGraph.AuthGraph) {
                                 inclusive = true
                             }

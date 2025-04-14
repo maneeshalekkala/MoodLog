@@ -24,6 +24,10 @@ class HistoryScreenViewModel(
     val journalData: StateFlow<List<LocalJournalData>> = _journalData.asStateFlow()
 
     init {
+        startLoadingJournalData()
+    }
+
+    fun startLoadingJournalData(){
         getJournalDataForUser(authRepository.getCurrentUserId().toString())
     }
 

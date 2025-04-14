@@ -18,6 +18,7 @@ import uk.ac.tees.mad.moodlog.model.room.LocalJournalDataDatabase
 import uk.ac.tees.mad.moodlog.viewmodel.AuthScreenViewModel
 import uk.ac.tees.mad.moodlog.viewmodel.HistoryScreenViewModel
 import uk.ac.tees.mad.moodlog.viewmodel.JournalScreenViewModel
+import uk.ac.tees.mad.moodlog.viewmodel.ProfileScreenViewModel
 import uk.ac.tees.mad.moodlog.viewmodel.SplashScreenViewModel
 
 val appModule = module {
@@ -51,4 +52,5 @@ val appModule = module {
     viewModelOf(::AuthScreenViewModel)
     viewModelOf(::JournalScreenViewModel)
     viewModelOf(::HistoryScreenViewModel)
+    viewModelOf(::ProfileScreenViewModel)
 }
