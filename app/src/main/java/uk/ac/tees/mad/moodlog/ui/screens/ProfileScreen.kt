@@ -1,10 +1,7 @@
 package uk.ac.tees.mad.moodlog.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,7 +48,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -81,7 +77,6 @@ fun ProfileScreen(
     var editNameState by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf(userData.userDetails?.displayName ?: "") }
     var isDarkModeEnabled by remember { mutableStateOf(true) }
-    var isFingerprintEnabled by remember { mutableStateOf(false) }
 
 
     Scaffold(
@@ -91,51 +86,51 @@ fun ProfileScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                        Text(
-                            text = "Profile",
-                            maxLines = 1,
-                            fontSize = 30.sp,
-                            overflow = TextOverflow.Ellipsis,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+                    Text(
+                        text = "Profile",
+                        maxLines = 1,
+                        fontSize = 30.sp,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }, navigationIcon = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    IconButton(onClick = {
+                        navController.popBackStack()
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            modifier = Modifier.size(36.dp),
                         )
                     }
-                }, navigationIcon = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        IconButton(onClick = {
-                            navController.popBackStack()
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                modifier = Modifier.size(36.dp),
-                            )
-                        }
+                }
+            }, actions = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    AnimatedVisibility(offlineMode == true) {
+                        Icon(
+                            Icons.Outlined.CloudOff,
+                            "Offline",
+                            tint = MaterialTheme.colorScheme.error
+                        )
                     }
-                }, actions = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        AnimatedVisibility(offlineMode == true) {
-                            Icon(
-                                Icons.Outlined.CloudOff,
-                                "Offline",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                        AnimatedVisibility(offlineMode == false) {
-                            Icon(Icons.Outlined.CloudDone, "Online", tint = Color.Green)
-                        }
-                        Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+                    AnimatedVisibility(offlineMode == false) {
+                        Icon(Icons.Outlined.CloudDone, "Online", tint = Color.Green)
                     }
-                }, scrollBehavior = scrollBehavior
+                    Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+                }
+            }, scrollBehavior = scrollBehavior
             )
         }) { innerPadding ->
         LazyColumn(
