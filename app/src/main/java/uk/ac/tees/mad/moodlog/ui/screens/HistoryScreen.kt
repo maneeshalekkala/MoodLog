@@ -3,7 +3,6 @@ package uk.ac.tees.mad.moodlog.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,16 +21,24 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.setSelection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,6 +60,10 @@ import uk.ac.tees.mad.moodlog.R
 import uk.ac.tees.mad.moodlog.model.dataclass.room.LocalJournalData
 import uk.ac.tees.mad.moodlog.view.navigation.Dest
 import uk.ac.tees.mad.moodlog.viewmodel.HistoryScreenViewModel
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,70 +77,64 @@ fun HistoryScreen(
     val journalData by historyScreenViewModel.journalData.collectAsStateWithLifecycle()
     var searchText by remember { mutableStateOf("") }
     var isFilterExpanded by remember { mutableStateOf(false) }
-    // Mock data for demonstration
-    val mockJournalEntries = listOf(
-        LocalJournalData(
-            id = 1,
-            journalDate = "2024-03-15",
-            journalTime = "10:00",
-            journalMood = "Happy",
-            journalContent = "Had a great day!",
-            journalLocationAddress = "London",
-            journalImage = "image_url_1",
-        ),
-        LocalJournalData(
-            id = 2,
-            journalDate = "2024-03-16",
-            journalTime = "14:30",
-            journalMood = "Neutral",
-            journalContent = "Just an ordinary day.",
-            journalLocationAddress = "Manchester",
-            journalImage = "image_url_2",
-        ),
-        LocalJournalData(
-            id = 3,
-            journalDate = "2024-03-17",
-            journalTime = "18:45",
-            journalMood = "Sad",
-            journalContent = "Feeling a bit down.",
-            journalLocationAddress = "Birmingham",
-            journalImage = "image_url_3",
-        ),
-    )
+    var selectedMood by remember { mutableStateOf<String?>(null) }
+    var isMoodDropdownExpanded by remember { mutableStateOf(false) }
+    val moodOptions = listOf("Very Dissatisfied", "Dissatisfied", "Neutral", "Satisfied", "Very Satisfied")
+    var showDatePickerDialog by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(title = { Text("History")},
-                actions = {
-                    IconButton(
-                        onClick = {
-                            historyScreenViewModel.startLoadingJournalData()
-                        }
-                    ) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
-                    }
-                    Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                    IconButton(
-                        onClick = {
-                            navController.navigate(Dest.ProfileScreen)
-                        }
-                    ) {
-                        Icon(Icons.Filled.AccountCircle, contentDescription = "Profile Screen")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    navController.navigate(Dest.JournalScreen)
-                }
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "Add Journal Entry")
+    // Filtered data
+    val filteredData = remember(journalData, searchText, selectedMood, datePickerState.selectedDateMillis) {
+        val selectedDateMillis = datePickerState.selectedDateMillis
+        journalData.filter { entry ->
+            val matchesSearchText =
+                searchText.isBlank() || entry.journalContent.contains(searchText, ignoreCase = true)
+            val matchesMood = selectedMood == null || entry.journalMood == selectedMood
+            val matchesDate = if (selectedDateMillis != null) {
+                val calendar = Calendar.getInstance()
+                calendar.timeInMillis = selectedDateMillis
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                val startOfDay = calendar.timeInMillis
+                calendar.add(Calendar.DAY_OF_MONTH, 1)
+                val endOfDay = calendar.timeInMillis - 1
+                entry.journalDate.toLong() in startOfDay..endOfDay
+            } else {
+                true
             }
+            matchesSearchText && matchesMood && matchesDate
         }
-    ) { innerPadding ->
+    }
+
+    Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
+        TopAppBar(title = { Text("History") }, actions = {
+            IconButton(
+                onClick = {
+                    historyScreenViewModel.startLoadingJournalData()
+                    searchText = "" // Clear search text
+                    selectedMood = null // Clear selected mood
+                    datePickerState.selectedDateMillis = null // Clear selected date
+                }) {
+                Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+            }
+            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+            IconButton(
+                onClick = {
+                    navController.navigate(Dest.ProfileScreen)
+                }) {
+                Icon(Icons.Filled.AccountCircle, contentDescription = "Profile Screen")
+            }
+        })
+    }, floatingActionButton = {
+        FloatingActionButton(
+            onClick = {
+                navController.navigate(Dest.JournalScreen)
+            }) {
+            Icon(Icons.Filled.Add, contentDescription = "Add Journal Entry")
+        }
+    }) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -159,24 +165,95 @@ fun HistoryScreen(
                 Icon(
                     Icons.Filled.KeyboardArrowDown,
                     contentDescription = "Expand Filter",
-                    modifier = Modifier.clickable { isFilterExpanded = !isFilterExpanded }
-                )
+                    modifier = Modifier.clickable { isFilterExpanded = !isFilterExpanded })
             }
 
             if (isFilterExpanded) {
-                // Display filter UI components here
-                Text("Filter UI would go here. (Date range, Mood selection)", modifier = Modifier.padding(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Mood Filter
+                ExposedDropdownMenuBox(
+                    expanded = isMoodDropdownExpanded,
+                    onExpandedChange = { isMoodDropdownExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = selectedMood ?: "Select Mood",
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(
+                                expanded = isMoodDropdownExpanded
+                            )
+                        },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = isMoodDropdownExpanded,
+                        onDismissRequest = { isMoodDropdownExpanded = false }
+                    ) {
+                        moodOptions.forEach { mood ->
+                            DropdownMenuItem(
+                                text = { Text(mood) },
+                                onClick = {
+                                    selectedMood = mood
+                                    isMoodDropdownExpanded = false
+                                }
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text("Clear") },
+                            onClick = {
+                                selectedMood = null
+                                isMoodDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = { showDatePickerDialog = true }) {
+                    Text("Select Date")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            if (showDatePickerDialog) {
+                DatePickerDialog(
+                    onDismissRequest = { showDatePickerDialog = false },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showDatePickerDialog = false
+                            }
+                        ) {
+                            Text("OK")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                showDatePickerDialog = false
+                                datePickerState.selectedDateMillis = null // Clear date selection
+                            }
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
+                ) {
+                    DatePicker(state = datePickerState)
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // List of journal entries
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp)
+                modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)
             ) {
-                items(journalData) { entry ->
-                    JournalEntryItem(entry = entry)
+                items(filteredData) { entry ->
+                    JournalEntryItem(entry = entry, viewModel = historyScreenViewModel)
                 }
             }
         }
@@ -184,7 +261,7 @@ fun HistoryScreen(
 }
 
 @Composable
-fun JournalEntryItem(entry: LocalJournalData) {
+fun JournalEntryItem(entry: LocalJournalData, viewModel: HistoryScreenViewModel) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -192,12 +269,11 @@ fun JournalEntryItem(entry: LocalJournalData) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = "${entry.journalDate} ${entry.journalTime}", fontWeight = FontWeight.Bold)
-            }
+
+            val formattedDate = formatDateFromTimestamp(entry.journalDate.toLong())
+            val formattedTime = formatTimeFromTimestamp(entry.journalTime.toLong())
+            Text(text = "$formattedDate", fontWeight = FontWeight.Bold)
+
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = entry.journalMood)
             Spacer(modifier = Modifier.height(8.dp))
@@ -218,6 +294,26 @@ fun JournalEntryItem(entry: LocalJournalData) {
                     contentScale = ContentScale.Crop
                 )
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "Posted on: $formattedTime")
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(onClick = {
+                viewModel.deleteJournalData(entry)
+            }) {
+                Text(text = "Delete")
+            }
         }
     }
+}
+
+fun formatDateFromTimestamp(timestamp: Long): String {
+    val date = Date(timestamp)
+    val format = SimpleDateFormat("d MMMM, yyyy", Locale.getDefault())
+    return format.format(date)
+}
+
+fun formatTimeFromTimestamp(timestamp: Long): String {
+    val date = Date(timestamp)
+    val format = SimpleDateFormat("HH:mm, d MM yyyy", Locale.getDefault())
+    return format.format(date)
 }

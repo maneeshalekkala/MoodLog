@@ -12,7 +12,7 @@ class MoodLogApplication : Application() {
         startKoin {
             androidLogger(Level.DEBUG)
             androidContext(this@MoodLogApplication)
-            modules(appModule,)
+            modules(appModule)
         }
     }
 }

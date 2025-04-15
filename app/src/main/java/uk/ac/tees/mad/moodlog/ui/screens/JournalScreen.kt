@@ -506,42 +506,6 @@ fun JournalScreen(
                         }
                     }
                 }
-                item {
-                    Button(
-                        onClick = {
-                            viewmodel.logOut()
-                            navController.navigate(SubGraph.AuthGraph) {
-                                popUpTo(SubGraph.HomeGraph) {
-                                    inclusive = true
-                                }
-                            }
-                        },
-                    ) {
-                        Text(text = "Log Out")
-                    }
-                }
-                item{
-                    Text(text = "Database Data")
-                }
-                items(databaseData, key = {it.id}) {data->
-                    Column{
-                        Text(text= data.id.toString())
-                        Text(text = data.journalMood)
-                        Text(text = data.journalTime)
-                        Text(text = data.journalDate)
-                        Text(text = data.journalContent)
-                        Text(text = data.journalLocationAddress)
-                        Text(text = data.journalLocationLatitude.toString())
-                        Text(text = data.journalLocationLongitude.toString())
-                        Text(text = data.journalImage)
-                        Button(onClick = {
-                            viewmodel.deleteJournalData(data)
-                        }){
-                            Text(text = "Delete")
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                }
             }
         }
     }

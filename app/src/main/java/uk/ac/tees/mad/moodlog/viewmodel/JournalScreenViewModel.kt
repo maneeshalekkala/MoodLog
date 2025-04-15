@@ -83,10 +83,6 @@ class JournalScreenViewModel(
         _address.value = newAddress
     }
 
-    fun logOut() {
-        authRepository.signOut()
-    }
-
     fun saveJournal() {
         viewModelScope.launch {
             val journalData = LocalJournalData(
@@ -105,7 +101,6 @@ class JournalScreenViewModel(
         }
     }
 
-    //changed return type to flow
     fun getJournalDataForUser(userId: String) {
         viewModelScope.launch {
             localJournalDataRepository.getAllJournalDataForUser(userId).collectLatest { journalList ->

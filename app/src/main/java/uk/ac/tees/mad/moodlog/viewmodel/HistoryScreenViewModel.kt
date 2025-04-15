@@ -33,24 +33,40 @@ class HistoryScreenViewModel(
 
     fun getJournalDataForUser(userId: String) {
         viewModelScope.launch {
-            journalFirestoreRepository.getJournalEntries(userId).collectLatest { firestoreResult ->
-                when (firestoreResult) {
-                    is FirestoreResult.Success -> {
-                        _journalData.value = firestoreResult.data
-                    }
-
-                    is FirestoreResult.Error -> {
-                        // Handle error - could retry, log, etc.
-                        Log.e(
-                            "JournalSync",
-                            "Error getting journal from Firestore",
-                            firestoreResult.exception
-                        ) // Added log
-                    }
-
-                    else -> {}
-                }
+            localJournalDataRepository.getAllJournalDataForUser(userId).collectLatest { journalList ->
+                _journalData.value = journalList
             }
         }
     }
+
+    fun deleteJournalData(journalData: LocalJournalData) {
+        viewModelScope.launch {
+            //soft delete
+            localJournalDataRepository.updateJournalData(journalData.copy(isDeleted = true))
+        }
+    }
 }
+
+//    fun getJournalDataForUser(userId: String) {
+//        viewModelScope.launch {
+//            journalFirestoreRepository.getJournalEntries(userId).collectLatest { firestoreResult ->
+//                when (firestoreResult) {
+//                    is FirestoreResult.Success -> {
+//                        _journalData.value = firestoreResult.data
+//                    }
+//
+//                    is FirestoreResult.Error -> {
+//                        // Handle error - could retry, log, etc.
+//                        Log.e(
+//                            "JournalSync",
+//                            "Error getting journal from Firestore",
+//                            firestoreResult.exception
+//                        ) // Added log
+//                    }
+//
+//                    else -> {}
+//                }
+//            }
+//        }
+//    }
+//}

@@ -5,7 +5,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
-import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import uk.ac.tees.mad.moodlog.model.firestore.JournalSynchronizer
@@ -29,13 +28,15 @@ val appModule = module {
     // Firebase
     single { FirebaseAuth.getInstance() }
     single { AuthRepository(get()) }
-    single { FirebaseFirestore.getInstance()}
+    single { FirebaseFirestore.getInstance() }
     single { JournalFirestoreRepository(get()) }
 
     // Local Journal Data Database
     single {
         Room.databaseBuilder(
-            androidApplication(), LocalJournalDataDatabase::class.java, "local_journal_data_database"
+            androidApplication(),
+            LocalJournalDataDatabase::class.java,
+            "local_journal_data_database"
         ).build()
     }
     single {

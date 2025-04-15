@@ -4,6 +4,7 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import uk.ac.tees.mad.moodlog.model.dataclass.firebase.FirestoreResult
 import uk.ac.tees.mad.moodlog.model.repository.AuthRepository
@@ -18,13 +19,14 @@ class JournalSynchronizer(
     fun startSync() {
         Log.d("JournalSync", "JournalSynchronizer started")
         CoroutineScope(Dispatchers.IO).launch {
-            localJournalDataRepository.getJournalsForSync().collectLatest { journals ->
-                Log.d("JournalSync", "Found ${journals.size} journals to sync")
-                journals.forEach { journal ->
-                    Log.d("JournalSync", "Processing journal: $journal")
-                    val userId = authRepository.getCurrentUserId()
-                    if (userId != null) {
-                        Log.d("JournalSync", "User ID: $userId")
+            val userId = authRepository.getCurrentUserId()
+            if (userId != null) {
+                syncFromFirestoreToLocal(userId)
+                localJournalDataRepository.getJournalsForSync().collectLatest { journals ->
+                    Log.d("JournalSync", "Found ${journals.size} journals to sync")
+                    journals.forEach { journal ->
+                        Log.d("JournalSync", "Processing journal: $journal")
+
                         if (journal.firestoreId.isBlank() && !journal.isDeleted) { // New journal
                             Log.d("JournalSync", "Adding new journal to Firestore")
                             journalFirestoreRepository.addJournalEntry(userId, journal)
@@ -48,7 +50,7 @@ class JournalSynchronizer(
                                     }
                                 }
                         } else if (journal.needsUpdate) {
-                            if(!journal.isDeleted){
+                            if (!journal.isDeleted) {
                                 Log.d("JournalSync", "Updating journal in Firestore")
                                 journalFirestoreRepository.updateFirestoreJournalEntry(userId, journal)
                                     .collectLatest { firestoreResult ->
@@ -59,7 +61,7 @@ class JournalSynchronizer(
                                         }
                                     }
                             }
-                        } else if(journal.isDeleted){
+                        } else if (journal.isDeleted) {
                             Log.d("JournalSync", "Deleting journal from Firestore")
                             journalFirestoreRepository.deleteJournalEntry(userId, journal)
                                 .collectLatest { firestoreResult ->
@@ -70,10 +72,39 @@ class JournalSynchronizer(
                                     }
                                 }
                         }
-                    }else{
-                        Log.e("JournalSync", "User not logged in")
                     }
                 }
+            } else {
+                Log.e("JournalSync", "User not logged in")
+            }
+
+        }
+    }
+
+    private suspend fun syncFromFirestoreToLocal(userId: String) {
+        Log.d("JournalSync", "Syncing Firestore to Local DB for user: $userId")
+        val localJournals = localJournalDataRepository.getAllJournalDataForUser(userId).firstOrNull() ?: emptyList()
+        journalFirestoreRepository.getJournalEntries(userId).collectLatest { firestoreResult ->
+            when (firestoreResult) {
+                is FirestoreResult.Success -> {
+                    val firestoreJournals = firestoreResult.data
+                    firestoreJournals.forEach { firestoreJournal ->
+                        // Check if the journal already exists locally based on firestoreId
+                        val localJournal = localJournals.find { it.firestoreId == firestoreJournal.firestoreId }
+                        if (localJournal == null) {
+                            // Insert the new journal into the local database
+                            Log.d("JournalSync", "Adding new journal from Firestore to local DB: ${firestoreJournal.firestoreId}")
+                            localJournalDataRepository.insertJournalData(firestoreJournal)
+                        }else if(firestoreJournal!=localJournal){
+                            localJournalDataRepository.updateJournalData(firestoreJournal)
+                            Log.d("JournalSync", "Updating journal from Firestore to local DB: ${firestoreJournal.firestoreId}")
+                        }
+                    }
+                }
+                is FirestoreResult.Error -> {
+                    Log.e("JournalSync", "Error fetching journals from Firestore", firestoreResult.exception)
+                }
+                else -> {}
             }
         }
     }
