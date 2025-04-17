@@ -1,5 +1,6 @@
 package uk.ac.tees.mad.moodlog.ui.screens
 
+import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -44,10 +45,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -60,6 +63,8 @@ import org.koin.androidx.compose.koinViewModel
 import uk.ac.tees.mad.moodlog.model.dataclass.firebase.AuthResult
 import uk.ac.tees.mad.moodlog.view.navigation.SubGraph
 import uk.ac.tees.mad.moodlog.viewmodel.ProfileScreenViewModel
+
+val LocalIsDarkMode = staticCompositionLocalOf { mutableStateOf(true) }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,9 +79,12 @@ fun ProfileScreen(
     val userData by viewmodel.userData.collectAsStateWithLifecycle()
     val userDetailsResult by viewmodel.userDetails.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+    val isDarkMode = LocalIsDarkMode.current
+
     var editNameState by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf(userData.userDetails?.displayName ?: "") }
-    var isDarkModeEnabled by remember { mutableStateOf(true) }
 
 
     Scaffold(
@@ -327,8 +335,11 @@ fun ProfileScreen(
                                 )
                             }
                             Switch(
-                                checked = isDarkModeEnabled,
-                                onCheckedChange = { isDarkModeEnabled = it })
+                                checked = isDarkMode.value,
+                                onCheckedChange = {
+                                    isDarkMode.value = it
+                                    sharedPreferences.edit().putBoolean("dark_mode", it).apply()
+                                })
                         }
                     }
                 }

@@ -7,17 +7,20 @@ import android.view.animation.OvershootInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
 import org.koin.android.ext.android.inject
 import uk.ac.tees.mad.moodlog.model.firestore.JournalSynchronizer
+import uk.ac.tees.mad.moodlog.ui.screens.LocalIsDarkMode
 import uk.ac.tees.mad.moodlog.ui.theme.MoodLogTheme
 import uk.ac.tees.mad.moodlog.view.navigation.SetupNavGraph
-import kotlin.getValue
 
 class MainActivity : ComponentActivity() {
-    private val journalSynchronizer: JournalSynchronizer by inject()
+    val journalSynchronizer: JournalSynchronizer by inject()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         installSplashScreen().apply {
@@ -45,14 +48,18 @@ class MainActivity : ComponentActivity() {
             }
         }
         enableEdgeToEdge()
-        //start synchronization
-        journalSynchronizer.startSync()
         setContent {
-            MoodLogTheme {
-                val navController = rememberNavController()
-                SetupNavGraph(
-                    navController = navController
-                )
+            val sharedPreferences = getSharedPreferences("app_settings", MODE_PRIVATE)
+            val isDarkMode = remember {
+                mutableStateOf(sharedPreferences.getBoolean("dark_mode", true))
+            }
+            CompositionLocalProvider(LocalIsDarkMode provides isDarkMode) {
+                MoodLogTheme(darkTheme = isDarkMode.value) {
+                    val navController = rememberNavController()
+                    SetupNavGraph(
+                        navController = navController, journalSynchronizer = journalSynchronizer
+                    )
+                }
             }
         }
     }

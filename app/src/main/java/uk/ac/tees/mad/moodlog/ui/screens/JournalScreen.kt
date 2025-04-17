@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.DateRange
@@ -43,6 +45,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -63,7 +66,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -169,9 +174,55 @@ fun JournalScreen(
             }
         })
 
+    var hasImage by remember {
+        mutableStateOf(false)
+    }
+    var imageUri by remember {
+        mutableStateOf<Uri?>(null)
+    }
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(), onResult = { uri ->
+            hasImage = uri != null
+            imageUri = uri
+        })
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(), onResult = { success ->
+            hasImage = success
+        })
+
     Scaffold(
-        modifier = Modifier.fillMaxSize(), topBar = {
-            TopAppBar(title = { Text(text = "Journal Screen") })
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+                    Text(
+                        text = "Add Journal Entry",
+                        maxLines = 1,
+                        fontSize = 30.sp,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }, navigationIcon = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    IconButton(onClick = {
+                        navController.popBackStack()
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            modifier = Modifier.size(36.dp),
+                        )
+                    }
+                }
+            }
+                )
         }) { innerPadding ->
         Box(
             modifier = Modifier
@@ -331,22 +382,6 @@ fun JournalScreen(
 
                 // Add Photo
                 item {
-                    var hasImage by remember {
-                        mutableStateOf(false)
-                    }
-                    var imageUri by remember {
-                        mutableStateOf<Uri?>(null)
-                    }
-                    val context = LocalContext.current
-                    val imagePicker = rememberLauncherForActivityResult(
-                        contract = ActivityResultContracts.GetContent(), onResult = { uri ->
-                            hasImage = uri != null
-                            imageUri = uri
-                        })
-                    val cameraLauncher = rememberLauncherForActivityResult(
-                        contract = ActivityResultContracts.TakePicture(), onResult = { success ->
-                            hasImage = success
-                        })
                     Text(
                         text = "Add Photo",
                         style = MaterialTheme.typography.titleMedium,
@@ -355,13 +390,14 @@ fun JournalScreen(
                     )
 
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().height(200.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(width = 200.dp, height = 200.dp)
+                                .fillMaxHeight()
+                                .fillMaxWidth(0.5f)
                                 .clip(MaterialTheme.shapes.extraLarge)
                                 .background(Color.LightGray.copy(alpha = 0.3f))
                                 .border(
@@ -386,7 +422,11 @@ fun JournalScreen(
                                 )
                             }
                         }
-                        Column {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Button(
                                 onClick = {
                                     imagePicker.launch("image/*")
@@ -482,7 +522,8 @@ fun JournalScreen(
                     Button(
                         onClick = {
                             viewmodel.updateAddress(address.toString())
-                            viewmodel.saveJournal()
+                            viewmodel.saveJournal(imageUri,context)
+                            navController.popBackStack()
                         },
                         modifier = Modifier
                             .fillMaxWidth()

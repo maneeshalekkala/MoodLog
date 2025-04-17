@@ -64,14 +64,16 @@ import androidx.navigation.NavHostController
 import org.koin.androidx.compose.koinViewModel
 import uk.ac.tees.mad.moodlog.R
 import uk.ac.tees.mad.moodlog.model.dataclass.firebase.AuthResult
-import uk.ac.tees.mad.moodlog.view.navigation.Dest
+import uk.ac.tees.mad.moodlog.model.firestore.JournalSynchronizer
 import uk.ac.tees.mad.moodlog.view.navigation.SubGraph
 import uk.ac.tees.mad.moodlog.viewmodel.AuthScreenViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthScreen(
-    navController: NavHostController, viewmodel: AuthScreenViewModel = koinViewModel()
+    navController: NavHostController,
+    journalSynchronizer: JournalSynchronizer,
+    viewmodel: AuthScreenViewModel = koinViewModel()
 ) {
     val email by viewmodel.email.collectAsStateWithLifecycle()
     val password by viewmodel.password.collectAsStateWithLifecycle()
@@ -128,6 +130,7 @@ fun AuthScreen(
 
                     is AuthResult.Success -> {
                         // Handle successful sign-up
+                        journalSynchronizer.startSync()
                         navController.navigate(SubGraph.HomeGraph) {
                             popUpTo(SubGraph.AuthGraph) {
                                 inclusive = true

@@ -10,21 +10,17 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import uk.ac.tees.mad.moodlog.model.dataclass.state.LoadingState
 import uk.ac.tees.mad.moodlog.model.repository.AuthRepository
-import uk.ac.tees.mad.moodlog.model.repository.JournalFirestoreRepository
-import uk.ac.tees.mad.moodlog.model.repository.LocalJournalDataRepository
 import uk.ac.tees.mad.moodlog.model.repository.NetworkRepository
 
 class SplashScreenViewModel(
-    private val networkRepository: NetworkRepository,
-    private val authRepository: AuthRepository,
-    private val localJournalDataRepository: LocalJournalDataRepository,
-    private val journalFirestoreRepository: JournalFirestoreRepository,
+    private val networkRepository: NetworkRepository, private val authRepository: AuthRepository
 ) : ViewModel() {
     private val _isNetworkAvailable: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val isNetworkAvailable: StateFlow<Boolean> = _isNetworkAvailable.asStateFlow()
 
     private val _loadingState = MutableStateFlow<LoadingState<Any>>(LoadingState.Loading)
     val loadingState: StateFlow<LoadingState<Any>> = _loadingState.asStateFlow()
+    private var permissionsGranted = false
 
     private fun observeNetworkConnectivity() {
         viewModelScope.launch {
@@ -47,6 +43,9 @@ class SplashScreenViewModel(
     fun startLoading() {
         viewModelScope.launch {
             _loadingState.value = LoadingState.Loading
+            if (!permissionsGranted) {
+                return@launch
+            }
             networkRepository.isNetworkAvailable.collectLatest { isAvailable ->
                 if (isAvailable) {
                     _loadingState.value = LoadingState.Loading
@@ -69,8 +68,15 @@ class SplashScreenViewModel(
         }
     }
 
-        fun getCurrentUserId(): String? {
-        return authRepository.getCurrentUserId()
+    fun onPermissionsGranted() {
+        permissionsGranted = true
+        startLoading()
+    }
+
+    fun onPermissionsDenied() {
+        permissionsGranted = false
+        _loadingState.value =
+            LoadingState.Error("Permissions Denied, Grant Permission from settings")
     }
 
     fun isSignedIn(): Boolean {

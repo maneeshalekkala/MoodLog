@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import uk.ac.tees.mad.moodlog.model.firestore.JournalSynchronizer
 import uk.ac.tees.mad.moodlog.ui.screens.AuthScreen
 import uk.ac.tees.mad.moodlog.ui.screens.HistoryScreen
 import uk.ac.tees.mad.moodlog.ui.screens.JournalScreen
@@ -13,17 +14,17 @@ import uk.ac.tees.mad.moodlog.ui.screens.SplashScreen
 
 @Composable
 fun SetupNavGraph(
-    navController: NavHostController
+    navController: NavHostController, journalSynchronizer: JournalSynchronizer
 ) {
     NavHost(
         navController = navController, startDestination = Dest.SplashScreen
     ) {
         composable<Dest.SplashScreen> {
-            SplashScreen(navController = navController)
+            SplashScreen(navController = navController, journalSynchronizer = journalSynchronizer)
         }
         navigation<SubGraph.AuthGraph>(startDestination = Dest.AuthScreen) {
             composable<Dest.AuthScreen> {
-                AuthScreen(navController = navController)
+                AuthScreen(navController = navController, journalSynchronizer = journalSynchronizer)
             }
         }
         navigation<SubGraph.HomeGraph>(startDestination = Dest.HistoryScreen) {

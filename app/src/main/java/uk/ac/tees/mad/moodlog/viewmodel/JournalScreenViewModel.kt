@@ -1,19 +1,25 @@
 package uk.ac.tees.mad.moodlog.viewmodel
 
+import android.content.Context
+import android.net.Uri
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import uk.ac.tees.mad.moodlog.model.dataclass.location.LocationData
 import uk.ac.tees.mad.moodlog.model.dataclass.room.LocalJournalData
 import uk.ac.tees.mad.moodlog.model.repository.AuthRepository
 import uk.ac.tees.mad.moodlog.model.repository.LocalJournalDataRepository
 import uk.ac.tees.mad.moodlog.view.utils.LocationUtils
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -83,8 +89,9 @@ class JournalScreenViewModel(
         _address.value = newAddress
     }
 
-    fun saveJournal() {
+    fun saveJournal(imageUri: Uri?,context: Context) {
         viewModelScope.launch {
+            val imagePath = imageUri?.let { saveImageToInternalStorage(it,context) }
             val journalData = LocalJournalData(
                 userId = authRepository.getCurrentUserId().toString(),
                 journalContent = journalContent.value,
@@ -94,10 +101,28 @@ class JournalScreenViewModel(
                 journalLocationLatitude = location.value?.latitude ?: 0.0,
                 journalLocationLongitude = location.value?.longitude ?: 0.0,
                 journalLocationAddress = address.value,
-                journalImage = "",
+                journalImage = imagePath ?: "", // Store local path or ""
                 firestoreId = ""
             )
             localJournalDataRepository.insertJournalData(journalData)
+        }
+    }
+
+    private suspend fun saveImageToInternalStorage(uri: Uri, context: Context): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val file = File(context.filesDir, "${System.currentTimeMillis()}.jpg")
+                inputStream?.use { input ->
+                    file.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                file.absolutePath
+            } catch (e: Exception) {
+                Log.e("JournalScreenViewModel", "Error saving image: ${e.message}")
+                null
+            }
         }
     }
 
