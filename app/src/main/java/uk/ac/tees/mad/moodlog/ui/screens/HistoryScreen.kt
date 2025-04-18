@@ -1,9 +1,13 @@
 package uk.ac.tees.mad.moodlog.ui.screens
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -23,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -55,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -363,22 +369,51 @@ fun JournalEntryItem(entry: LocalJournalData, viewModel: HistoryScreenViewModel)
                 Text(text = "Location: ${entry.journalLocationAddress}")
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
             // Displaying image, only if not null
-            if (entry.journalImage.isNullOrEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Image(
-                    painter = painterResource(id = R.drawable.moodlog_logo), //TODO replace with actual image
-                    contentDescription = "Journal Image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Fit
-                )
-            } else{
-                val imagePath = entry.journalImage
-                    Spacer(modifier = Modifier.height(8.dp))
-                    ImageFromPath(imagePath)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .background(color = MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center
+            ) {
+                fun decodeBase64ToBitmap(base64String: String): Bitmap? {
+                    return try {
+                        val decodedByteArray = Base64.decode(base64String, Base64.DEFAULT)
+                        BitmapFactory.decodeByteArray(
+                            decodedByteArray,
+                            0,
+                            decodedByteArray.size
+                        )
+                    } catch (e: Exception) {
+                        // Handle decoding errors (e.g., invalid Base64 string)
+                        null
+                    }
+                }
+                val bitmap = if(entry.journalImage.isNotEmpty()){
+                    decodeBase64ToBitmap(entry.journalImage)
+                }else{
+                    null
+                }
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        modifier = Modifier.fillMaxSize(),
+                        contentDescription = " Journal Image",
+                    )
+                } else {
+                    // Photo placeholder
+                    Image(
+                        painter = painterResource(id = R.drawable.moodlog_logo),
+                        contentDescription = "Journal Image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Fit
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Posted on: $formattedTime")

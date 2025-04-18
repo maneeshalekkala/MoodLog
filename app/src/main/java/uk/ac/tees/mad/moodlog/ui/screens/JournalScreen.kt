@@ -184,10 +184,12 @@ fun JournalScreen(
         contract = ActivityResultContracts.GetContent(), onResult = { uri ->
             hasImage = uri != null
             imageUri = uri
+            uri?.let { viewmodel.updateImage(it, context.contentResolver) }
         })
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture(), onResult = { success ->
             hasImage = success
+            imageUri?.let { viewmodel.updateImage(it, context.contentResolver) }
         })
 
     Scaffold(
@@ -522,7 +524,7 @@ fun JournalScreen(
                     Button(
                         onClick = {
                             viewmodel.updateAddress(address.toString())
-                            viewmodel.saveJournal(imageUri,context)
+                            viewmodel.saveJournal()
                             navController.popBackStack()
                         },
                         modifier = Modifier

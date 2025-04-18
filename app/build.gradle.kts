@@ -103,6 +103,9 @@ dependencies {
     implementation ("com.google.android.gms:play-services-location:21.3.0")
     implementation ("com.google.android.gms:play-services-maps:19.0.0")
 
+    implementation("androidx.exifinterface:exifinterface:1.4.0")
+    implementation ("com.google.accompanist:accompanist-permissions:0.37.2")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
